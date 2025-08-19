@@ -22,18 +22,23 @@ CREATE TABLE sales(
     FOREIGN KEY (product_id) REFERENCES products(product_id),
     FOREIGN KEY (customer_id) REFERENCES customer_info(customer_id)
 );
+
 SECTION 1 - CORE SQL CONCEPTS
+
 QUERY TO LIST ALL CUSTOMERS IN NAIROBI SHOWING THE FULL NAME AND LOCATION ONLY.
+
 SELECT full_name, location
 FROM customer_info
 WHERE location = 'Nairobi';
 
 QUERY TO DISPLAY EACH CUSTOMER AND THE PRODUCT THEY PURCHASED (THE FULL NAME, PRODUCT NAME AND PRICE).
+
 SELECT c.full_name, p.product_name, p.price
 FROM customer_info c
 JOIN products p ON c.customer_id = p.customer_id;
 
 QUERY TO FIND THE TOTAL SALES AMOUNT FOR EACH CUSTOMER DISPLAYING THE FULL NAME AND TOTAL AMOUNT SPENT IN DESCENDING ORDER.
+
 SELECT c.full_name, SUM(s.total_sales) AS total_spent
 FROM customer_info c
 JOIN sales s ON c.customer_id = s.customer_id
@@ -41,12 +46,14 @@ GROUP BY c.full_name
 ORDER BY total_spent DESC;
 
 QUERY TO FIND ALL CUSTOMERS WHO SPENT ABOVE 10000
+
 SELECT DISTINCT c.full_name
 FROM customer_info c
 JOIN products p ON c.customer_id = p.customer_id
 WHERE p.price > 10000;
 
 QUERY TO FIND THE TOP THREE CUSTOMERS WITH THE HIGHEST TOTAL SALES.
+
 SELECT c.full_name, SUM(s.total_sales) AS total_spent
 FROM customer_info c
 JOIN sales s ON c.customer_id = s.customer_id
@@ -55,7 +62,9 @@ ORDER BY total_spent DESC
 LIMIT 3;
 
 SECTION 2 - ADVANCED SQL TECHNIQUES
+
 A CTE THAT CALCULATES THE AVERAGE SALES PER CUSTOMER AND THEN RETURNS CUSTOMERS WHOSE TOTAL SALES ARE ABOVE THAT AVERAGE.
+
 WITH customer_totals AS (
     SELECT customer_id, SUM(total_sales) AS total_spent
     FROM sales
@@ -70,6 +79,7 @@ JOIN average_sales a ON ct.total_spent > a.avg_sales
 JOIN customer_info c ON ct.customer_id = c.customer_id;
 
 A WINDOW FUNCTION QUERY THAT RANKS THE PRODUCTS BY THEIR TOTAL SALES IN DESCENDING ORDER DISPLAYING PRODUCT NAME, TOTAL SALES & RANK.
+
 SELECT p.product_name, SUM(s.total_sales) AS total_sales,
        RANK() OVER (ORDER BY SUM(s.total_sales) DESC) AS rank
 FROM products p
@@ -77,6 +87,7 @@ JOIN sales s ON p.product_id = s.product_id
 GROUP BY p.product_name;
 
 QUERY TO CREATE A VIEW CALLED high_value_customers THAT LISTS ALL CUSTOMERS WITH TOTAL SALES ABOVE 50000.
+
 CREATE VIEW high_value_customers AS
 SELECT c.customer_id, c.full_name, SUM(s.total_sales) AS total_sales
 FROM customer_info c
@@ -85,6 +96,7 @@ GROUP BY c.customer_id, c.full_name
 HAVING SUM(s.total_sales) > 15000;
 
 QUERY TO CREATE A STORED PROCEDURE THAT ACCEPTS A LOCATION AS INPUT AND RETURNS ALL CUSTOMERS AND THEIR TOTAL SPENDING FROM THAT LOCATION.
+
 CREATE PROCEDURE GetCustomersByLocation(IN loc VARCHAR(90))
 BEGIN
     SELECT c.full_name, SUM(s.total_sales) AS total_spent
@@ -95,6 +107,7 @@ BEGIN
 END
 
 A RECURSIVE QUERY TO DISPLAY ALL SALES AND TRANSACTIONS IN ORDER BY sales_id ALONG WITH A RUNNING TOTAL OF SALES.
+
 WITH RECURSIVE sales_cte AS (
     SELECT sales_id, total_sales, customer_id, product_id, total_sales AS running_total
     FROM sales
@@ -110,20 +123,26 @@ WITH RECURSIVE sales_cte AS (
 SELECT * FROM sales_cte;
 
 SECTION 3 – QUERY OPTIMIZATION & EXECUTION PLANS
+
 The following query is running slowly
+
 SELECT * FROM sales WHERE total_sales > 5000;
-Two changes I would Make:
+
+Two changes I would Make & why:
  1. Add an index on total_sales: Without an index, the database scans the whole table to find rows > 5000. 
     that enables a range scan, dramatically reducing I/O.
  2. Avoid SELECT * and only select necessary columns. 
 
 Optimized Query
+
 SELECT id, customer_id, sale_date, total_sales
 FROM sales
 WHERE total_sales > 5000;
 
 SECTION 4 - DATA MODELLING
+
 Redesigning the given schema into 3NF normal form.
+
 CREATE TABLE customer_info (
     customer_id INT PRIMARY KEY,
     full_name VARCHAR(120),
@@ -146,14 +165,17 @@ CREATE TABLE sales (
 );
 
 A STAR SCHEMA DESIGN FOR ANALYZING SALES BY PRODUCT AND CUSTOMER LOCATION WHICH INCLUDES THE FACT TABLE AND DIMENSIONS TABLE WITH THEIR FIELDS.
-FACT TABLE 
+
+Fact table
 CREATE TABLE fact_sales (
     sales_id INT PRIMARY KEY,
     customer_id INT,
     product_id INT,
     total_sales FLOAT
 );
-DIMENSIONS TABLE 
+
+Dimensions table
+
 CREATE TABLE dim_customer (
     customer_id INT PRIMARY KEY,
     full_name VARCHAR(120),
@@ -167,6 +189,7 @@ CREATE TABLE dim_product (
 );
 
 DENORMOLIZATION 
+
 Scenario
 In an analytics dashboard, frequent joins between sales, customer_info, and products will cause performance issues. 
 Denormalizing helps reduce joins and improve read speed.
